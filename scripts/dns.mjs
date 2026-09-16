@@ -4,7 +4,8 @@
 //   CLOUDFLARE_API_TOKEN=... node scripts/dns.mjs [--dry-run]
 //
 // Token permissions: Zone > DNS > Edit, Zone > Zone > Read, and for the
-// subdomain aliases Zone > Dynamic Redirect > Edit. The token is read from
+// subdomain aliases Zone > Single Redirect > Edit (Cloudflare's name for the
+// redirect-rules permission). The token is read from
 // the environment and never printed or written.
 //
 // What it converges to, from routes.json:

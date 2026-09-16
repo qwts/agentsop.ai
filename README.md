@@ -64,8 +64,8 @@ npm run serve        # build and serve public/ on http://localhost:8788
 GitHub Pages serves `public/` for the custom domain `agentsop.ai`; the
 `CNAME` and `.nojekyll` files are written by the build. Cloudflare holds the
 DNS. To converge the records and the alias redirect, run in a shell that has
-a Cloudflare API token with Zone.DNS edit, Zone.Zone read, and Zone.Dynamic
-Redirect edit:
+a Cloudflare API token with Zone.DNS edit, Zone.Zone read, and Zone.Single
+Redirect edit (the permission that covers redirect rules):
 
 ```bash
 CLOUDFLARE_API_TOKEN=... node scripts/dns.mjs --dry-run
