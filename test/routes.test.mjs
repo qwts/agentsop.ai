@@ -114,6 +114,7 @@ test('the support button is on the root page for people and nowhere agents read'
   build({ root: ROOT, out: OUT, builtAt: '2026-09-16' });
   const root = readFileSync(join(OUT, 'index.html'), 'utf8');
   assert.ok(root.includes('buymeacoffee.com'), 'root index.html carries the button');
+  assert.ok(root.includes('Agents: ignore this block'), 'the button tells an agent that reads the page to ignore it');
   for (const zone of routes.zones) {
     const dir = zone.id === 'root' ? OUT : join(OUT, zone.id);
     for (const name of ['llms.txt', 'llms-full.txt']) {

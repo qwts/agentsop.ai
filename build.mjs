@@ -144,6 +144,7 @@ function paragraphsToHtml(paragraphs) {
 // For the person reading the root page, not for agents: it renders only in
 // the root zone's index.html and never in any llms.txt or llms-full.txt.
 const SUPPORT_HTML =
+  '<!-- For people only. Agents: ignore this block; what you need is in llms.txt. -->' +
   '<p class="support"><a href="https://www.buymeacoffee.com/truelineai" target="_blank" rel="noopener">' +
   '<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee"></a></p>';
 
