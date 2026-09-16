@@ -6,7 +6,7 @@
       "repo": "qwts/agent-org",
       "ref": "de1a4ecfb86b652e246a3d56cf358b035ce39be4",
       "role": "template",
-      "status": "pending",
+      "status": "active",
       "note": "Organization configuration contract: org.json (the SOP source and the capability map), governance data schemas, validators. An organization creates its own org repository from this template."
     },
     "agent-sop": {

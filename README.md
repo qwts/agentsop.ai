@@ -55,7 +55,7 @@ pinned there and never get a zone.
 
 ```bash
 npm run check        # tests + build (no dependencies; Node 22+)
-npm run pins:check   # every pinned link resolves (network)
+npm run pins:check   # every pinned link resolves (network); add --live to also check agentsop.ai itself
 npm run serve        # build and serve public/ on http://localhost:8788
 ```
 
