@@ -109,3 +109,16 @@ test('index.html links its own zone files relatively', () => {
   assert.ok(html.includes('href="llms.txt"'));
   assert.ok(!html.includes('href="/llms.txt"'));
 });
+
+test('the support button is on the root page for people and nowhere agents read', () => {
+  build({ root: ROOT, out: OUT, builtAt: '2026-09-16' });
+  const root = readFileSync(join(OUT, 'index.html'), 'utf8');
+  assert.ok(root.includes('buymeacoffee.com'), 'root index.html carries the button');
+  for (const zone of routes.zones) {
+    const dir = zone.id === 'root' ? OUT : join(OUT, zone.id);
+    for (const name of ['llms.txt', 'llms-full.txt']) {
+      assert.ok(!readFileSync(join(dir, name), 'utf8').includes('buymeacoffee'), `${zone.id}/${name} stays agent-only`);
+    }
+    if (zone.id !== 'root') assert.ok(!readFileSync(join(dir, 'index.html'), 'utf8').includes('buymeacoffee'), `${zone.id}/index.html has no button`);
+  }
+});

@@ -141,6 +141,12 @@ function paragraphsToHtml(paragraphs) {
     .join('\n');
 }
 
+// For the person reading the root page, not for agents: it renders only in
+// the root zone's index.html and never in any llms.txt or llms-full.txt.
+const SUPPORT_HTML =
+  '<p class="support"><a href="https://www.buymeacoffee.com/truelineai" target="_blank" rel="noopener">' +
+  '<img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee"></a></p>';
+
 export function renderIndexHtml(routes, zone, template, builtAt) {
   const nav = routes.zones
     .map((z) => {
@@ -169,7 +175,8 @@ export function renderIndexHtml(routes, zone, template, builtAt) {
     .replaceAll('{{INTRO}}', paragraphsToHtml(zone.intro ?? []))
     .replaceAll('{{NAV}}', nav)
     .replaceAll('{{SECTIONS}}', sections)
-    .replaceAll('{{BUILT}}', escapeHtml(builtAt));
+    .replaceAll('{{BUILT}}', escapeHtml(builtAt))
+    .replaceAll('{{SUPPORT}}', zone.id === 'root' ? SUPPORT_HTML : '');
 }
 
 export function build({ root = ROOT, out = OUT, builtAt = new Date().toISOString().slice(0, 10) } = {}) {
