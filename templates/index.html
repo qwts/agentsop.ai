@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{SUMMARY}}">
+<link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
+<link rel="alternate" type="text/plain" href="llms-full.txt" title="llms-full.txt">
+<style>
+  :root {
+    --bg: #fbfaf7; --fg: #1f1d1a; --muted: #6b665e; --line: #e2ded6; --accent: #2b5d9c; --code: #f0ede6;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #171614; --fg: #ebe7df; --muted: #a39d92; --line: #2f2c27; --accent: #8fb5ea; --code: #23211d; }
+  }
+  :root[data-theme="dark"] { --bg: #171614; --fg: #ebe7df; --muted: #a39d92; --line: #2f2c27; --accent: #8fb5ea; --code: #23211d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 44rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.9rem; margin-bottom: 2rem; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a[aria-current] { color: var(--fg); font-weight: 600; }
+  h1 { font-size: 1.75rem; margin: 0 0 0.75rem; letter-spacing: -0.01em; }
+  h2 { font-size: 1.05rem; margin: 2rem 0 0.5rem; }
+  .summary { font-size: 1.05rem; margin: 0 0 1.25rem; }
+  .files { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+  .files a { font: 0.85rem ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code); color: var(--fg); padding: 0.3rem 0.6rem; border-radius: 0.4rem; text-decoration: none; border: 1px solid var(--line); }
+  a { color: var(--accent); }
+  ol { padding-left: 1.4rem; }
+  ul.links { list-style: none; padding: 0; margin: 0; }
+  ul.links li { padding: 0.55rem 0; border-top: 1px solid var(--line); display: grid; gap: 0.15rem; }
+  ul.links li:last-child { border-bottom: 1px solid var(--line); }
+  ul.links span { color: var(--muted); font-size: 0.92rem; }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<main>
+<nav aria-label="Zones">
+{{NAV}}
+</nav>
+<h1>{{TITLE}}</h1>
+<p class="summary">{{SUMMARY}}</p>
+<div class="files">
+  <a href="llms.txt">llms.txt</a>
+  <a href="llms-full.txt">llms-full.txt</a>
+</div>
+{{INTRO}}
+{{SECTIONS}}
+<footer>Static routing. Every link is pinned to a commit; a change here is a reviewed pull request. Built {{BUILT}}.</footer>
+</main>
+</body>
+</html>

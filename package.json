@@ -1,0 +1,18 @@
+{
+  "name": "agentsop.ai",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Static router for agent standard operating procedures: agentsop.ai and its zones.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/routes.test.mjs",
+    "check": "npm test && npm run build",
+    "pins:check": "node tools/pins-check.mjs",
+    "dns": "node scripts/dns.mjs",
+    "serve": "npm run build && python3 -m http.server 8788 --directory public"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
