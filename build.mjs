@@ -5,6 +5,10 @@
 // The root zone lands in public/; every other zone in public/<zone>/. The
 // site is served as static files (GitHub Pages); a zone's subdomain alias
 // redirects to its folder, so the folder URL is canonical.
+//
+// The site names no repository. A zone lists files as paths inside the
+// repository that ~/.config/agent-sop/config.toml names under [repos];
+// the only absolute links are to the site itself.
 
 import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -12,9 +16,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = join(ROOT, 'public');
-const SHA = /^[0-9a-f]{40}$/;
-const ROLES = ['template'];
-const STATUSES = ['active', 'pending'];
 
 export function loadRoutes(root = ROOT) {
   return JSON.parse(readFileSync(join(root, 'routes.json'), 'utf8'));
@@ -25,7 +26,8 @@ export function validateRoutes(routes) {
   const ids = new Set();
   const hosts = new Set();
   if (!routes.zones.some((z) => z.id === 'root')) errors.push('a zone with id "root" is required');
-  if (!/^~\/\.config\/agentsop\/config\.toml$/.test(routes.config ?? '')) errors.push('config must be ~/.config/agentsop/config.toml');
+  if (routes.config !== '~/.config/agent-sop/config.toml') errors.push('config must be ~/.config/agent-sop/config.toml');
+  if (!routes.repos || typeof routes.repos !== 'object') errors.push('repos must map each config key to a one-line description');
   for (const zone of routes.zones) {
     if (ids.has(zone.id)) errors.push(`duplicate zone id ${zone.id}`);
     ids.add(zone.id);
@@ -34,39 +36,22 @@ export function validateRoutes(routes) {
     hosts.add(zone.host);
     const expectedHost = zone.id === 'root' ? routes.domain : `${zone.id}.${routes.domain}`;
     if (zone.host !== expectedHost) errors.push(`zone ${zone.id} host must be ${expectedHost}, got ${zone.host}`);
-    if (!zone.title || !zone.summary) errors.push(`zone ${zone.id} needs title and summary`);
+    if (!zone.title) errors.push(`zone ${zone.id} needs a title`);
     for (const section of zone.sections ?? []) {
       if (!section.heading) errors.push(`zone ${zone.id} has a section without a heading`);
-      for (const key of section.sources ?? []) {
-        if (!routes.sources[key]) errors.push(`zone ${zone.id} section ${section.heading} references unknown source ${key}`);
-      }
       for (const link of section.links ?? []) {
         if (!link.name || !link.note) errors.push(`zone ${zone.id} section ${section.heading} has a link without name/note`);
-        const kinds = ['url', 'src', 'zone'].filter((k) => link[k]);
-        if (kinds.length !== 1) errors.push(`link ${link.name} in ${zone.id}/${section.heading} must have exactly one of url, src, zone`);
-        if (link.src && !routes.sources[link.src]) errors.push(`link ${link.name} references unknown source ${link.src}`);
-        if (link.src && !link.path) errors.push(`link ${link.name} has src but no path`);
+        const kinds = ['url', 'path', 'zone'].filter((k) => link[k]);
+        if (kinds.length !== 1) errors.push(`link ${link.name} in ${zone.id}/${section.heading} must have exactly one of url, path, zone`);
+        if (link.path && !(routes.repos ?? {})[link.repo]) errors.push(`link ${link.name} names an unknown repo key ${link.repo}; keys are the [repos] entries of the config file`);
+        if (link.path && /^\/|\.\./.test(link.path)) errors.push(`link ${link.name} path must be relative to the repository root`);
         if (link.zone && !routes.zones.some((z) => z.id === link.zone)) errors.push(`link ${link.name} references unknown zone ${link.zone}`);
         if (link.url && !/^https:\/\//.test(link.url)) errors.push(`link ${link.name} url must be https`);
+        if (link.url && !link.url.startsWith(`https://${routes.domain}/`)) errors.push(`link ${link.name} url must stay on ${routes.domain}; repositories are named only by the config file`);
       }
     }
   }
-  for (const [key, source] of Object.entries(routes.sources)) {
-    if (!/^[\w.-]+\/[\w.-]+$/.test(source.repo)) errors.push(`source ${key} repo must be owner/name`);
-    if (!SHA.test(source.ref ?? '')) errors.push(`source ${key} ref must be a 40-hex commit SHA (branches and tags move)`);
-    if (!ROLES.includes(source.role)) errors.push(`source ${key} role must be one of ${ROLES.join(', ')}: instances and capabilities are named by an org repository, never by this router`);
-    if (!STATUSES.includes(source.status)) errors.push(`source ${key} status is invalid`);
-    if (!source.note) errors.push(`source ${key} needs a note`);
-  }
   return errors;
-}
-
-export function rawUrl(source, path) {
-  return `https://raw.githubusercontent.com/${source.repo}/${source.ref}/${path}`;
-}
-
-export function blobUrl(source, path) {
-  return `https://github.com/${source.repo}/blob/${source.ref}/${path}`;
 }
 
 // Canonical zone URL: the root of the host, or a folder under it.
@@ -78,7 +63,9 @@ function zoneById(routes, id) {
   return routes.zones.find((z) => z.id === id);
 }
 
-// Resolve a link to { name, url, humanUrl, note }.
+// Resolve a link to { name, url?, path?, repo?, note }. A path link is a file
+// in the repository the config file names under [repos] <repo>; the site
+// never knows which repository that is.
 export function resolveLink(routes, link) {
   if (link.url) return { name: link.name, url: link.url, humanUrl: link.url, note: link.note };
   if (link.zone) {
@@ -86,35 +73,32 @@ export function resolveLink(routes, link) {
     const base = zoneUrl(routes, target);
     return { name: link.name, url: `${base}llms.txt`, humanUrl: base, note: link.note };
   }
-  const source = routes.sources[link.src];
-  return { name: link.name, url: rawUrl(source, link.path), humanUrl: blobUrl(source, link.path), note: link.note };
+  return { name: link.name, path: link.path, repo: link.repo, note: link.note };
 }
 
-function sourceLinks(routes, keys) {
-  return keys.map((key) => {
-    const source = routes.sources[key];
-    const status = source.status === 'pending' ? ' Status: pending.' : '';
-    return {
-      name: source.repo,
-      url: `https://github.com/${source.repo}/tree/${source.ref}`,
-      humanUrl: `https://github.com/${source.repo}/tree/${source.ref}`,
-      note: `${source.role} at commit ${source.ref.slice(0, 7)}. ${source.note}${status}`,
-    };
-  });
+// A path link names its repository only when the zone's sections mix repos.
+function pathLabel(zone, link) {
+  const repos = new Set();
+  for (const section of zone.sections ?? []) for (const l of section.links ?? []) if (l.repo) repos.add(l.repo);
+  return repos.size > 1 ? `\`${link.path}\` (${link.repo} repository)` : `\`${link.path}\``;
 }
 
 export function sectionLinks(routes, section) {
-  const links = (section.links ?? []).map((link) => resolveLink(routes, link));
-  if (section.sources) links.push(...sourceLinks(routes, section.sources));
-  return links;
+  return (section.links ?? []).map((link) => resolveLink(routes, link));
+}
+
+function llmsItem(zone, link) {
+  if (link.url) return `- [${link.name}](${link.url}): ${link.note}`;
+  return `- ${pathLabel(zone, link)}: ${link.note}`;
 }
 
 export function renderLlmsTxt(routes, zone) {
-  const lines = [`# ${zone.title}`, '', `> ${zone.summary}`, ''];
+  const lines = [`# ${zone.title}`, ''];
+  if (zone.summary) lines.push(`> ${zone.summary}`, '');
   for (const paragraph of zone.intro ?? []) lines.push(paragraph, '');
   for (const section of zone.sections ?? []) {
     lines.push(`## ${section.heading}`, '');
-    for (const link of sectionLinks(routes, section)) lines.push(`- [${link.name}](${link.url}): ${link.note}`);
+    for (const link of sectionLinks(routes, section)) lines.push(llmsItem(zone, link));
     lines.push('');
   }
   return `${lines.join('\n').trimEnd()}\n`;
@@ -134,6 +118,12 @@ function escapeHtml(text) {
     .replaceAll('"', '&quot;');
 }
 
+// Site URLs in prose become links so a person landing on index.html can
+// follow the same path an agent reads in llms.txt.
+function linkify(escaped) {
+  return escaped.replace(/https:\/\/agentsop\.ai\/[\w./-]*[\w/]/g, (url) => `<a href="${url}">${url}</a>`);
+}
+
 function paragraphsToHtml(paragraphs) {
   return paragraphs
     .map((paragraph) => {
@@ -146,7 +136,7 @@ function paragraphsToHtml(paragraphs) {
           .join('');
         return `<p>${escapeHtml(listMatch[1])}:</p><ol>${items}</ol>`;
       }
-      return `<p>${escapeHtml(paragraph)}</p>`;
+      return `<p>${linkify(escapeHtml(paragraph))}</p>`;
     })
     .join('\n');
 }
@@ -161,15 +151,21 @@ export function renderIndexHtml(routes, zone, template, builtAt) {
   const sections = (zone.sections ?? [])
     .map((section) => {
       const items = sectionLinks(routes, section)
-        .map((link) => `<li><a href="${escapeHtml(link.humanUrl)}">${escapeHtml(link.name)}</a><span>${escapeHtml(link.note)}</span></li>`)
+        .map((link) => {
+          const label = link.url
+            ? `<a href="${escapeHtml(link.humanUrl)}">${escapeHtml(link.name)}</a>`
+            : `<code>${escapeHtml(pathLabel(zone, link).replaceAll('`', ''))}</code>`;
+          return `<li>${label}<span>${escapeHtml(link.note)}</span></li>`;
+        })
         .join('\n');
       return `<section><h2>${escapeHtml(section.heading)}</h2><ul class="links">${items}</ul></section>`;
     })
     .join('\n');
   return template
+    .replaceAll('<p class="summary">{{SUMMARY}}</p>', zone.summary ? '<p class="summary">{{SUMMARY}}</p>' : '')
     .replaceAll('{{TITLE}}', escapeHtml(zone.title))
     .replaceAll('{{HOST}}', escapeHtml(zone.host))
-    .replaceAll('{{SUMMARY}}', escapeHtml(zone.summary))
+    .replaceAll('{{SUMMARY}}', escapeHtml(zone.summary ?? ''))
     .replaceAll('{{INTRO}}', paragraphsToHtml(zone.intro ?? []))
     .replaceAll('{{NAV}}', nav)
     .replaceAll('{{SECTIONS}}', sections)

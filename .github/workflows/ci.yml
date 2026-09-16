@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   check:
-    name: Build, test, and check pins
+    name: Build and test
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -24,7 +24,3 @@ jobs:
           node-version: 22
       - run: npm test
       - run: npm run build
-      - name: Every pinned link resolves
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: npm run pins:check

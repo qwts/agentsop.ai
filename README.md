@@ -1,53 +1,55 @@
 # agentsop.ai
 
 The source of the static site at [agentsop.ai](https://agentsop.ai/): a router
-that tells agents where standard operating procedures live. It authors nothing.
-Each zone serves three files, `index.html`, `llms.txt`, and `llms-full.txt`,
-made entirely of pinned links into reviewed Git repositories and short notes
-about when to follow each one.
+that tells agents where to look for standard operating procedures. The site
+knows nothing about any organization. `~/.config/agent-sop/config.toml` on the
+agent's machine names the repositories; each zone says what to read in them.
 
-Design: [qwts/agent-sop discussion #372](https://github.com/qwts/agent-sop/discussions/372).
+Design: qwts/agent-sop discussion #372 (the owner's description and the
+arrival flow in the comment of 2026-09-16).
 
 ## Zones
 
-| Zone | Canonical URL | Alias | Answers |
+| Zone | Canonical URL | Alias | Says |
 | --- | --- | --- | --- |
-| root | `https://agentsop.ai/` | `www.agentsop.ai` | the map of zones and the five-step procedure |
-| start | `https://agentsop.ai/start/` | `start.agentsop.ai` | the one local config file and the resolution order |
-| org | `https://agentsop.ai/org/` | `org.agentsop.ai` | the organization configuration contract |
-| sop | `https://agentsop.ai/sop/` | `sop.agentsop.ai` | procedures, decisions, guides |
-| comms | `https://agentsop.ai/comms/` | `comms.agentsop.ai` | how agents communicate and who speaks |
-| skills | `https://agentsop.ai/skills/` | `skills.agentsop.ai` | how skills and capabilities are cataloged and loaded |
+| root | `https://agentsop.ai/` | `www.agentsop.ai` | how to get started and the routing |
+| start | `https://agentsop.ai/start/` | `start.agentsop.ai` | the three onboarding steps |
+| org | `https://agentsop.ai/org/` | `org.agentsop.ai` | org-level facts: who is who, which agent does what, shared CI/CD |
+| sop | `https://agentsop.ai/sop/` | `sop.agentsop.ai` | self-check, how-to, catalog |
+| comms | `https://agentsop.ai/comms/` | `comms.agentsop.ai` | how agents communicate |
 
-An alias is a 301 to the canonical folder. Zones route questions; the org
-repository named by `~/.config/agentsop/config.toml` routes names. Capability
-repositories (shared CI, the docs gate, the inventory, the AI primitives) are
-pinned there and never get a zone.
+Each zone serves three files: `index.html` for people, `llms.txt` and
+`llms-full.txt` for models. An alias is a 301 to the canonical folder.
+
+Arrival: a first visit reads `index.html`, goes to `start`, and creates the
+config file. A returning agent starts at `https://agentsop.ai/llms.txt` from
+memory and picks a zone.
 
 ## Rules
 
-1. `routes.json` is the only routing table. Every source is a template
-   repository pinned to a 40-hex commit; validation rejects branches, tags,
-   instance repositories, and non-https links.
-2. No instance or capability repository is named anywhere on the site. A test
-   fails the build if one appears.
+1. The site names no repository, organization, or commit. A zone lists files
+   as paths inside the repository the config file names (`[repos] org`,
+   `sop`, `comms`). A test fails the build if `qwts`, `github.com`, or a
+   branch name appears in the output.
+2. Short. `llms.txt` stays under 1600 bytes and `llms-full.txt` under 3200;
+   the tests enforce it.
 3. A zone is exactly three files. No API, no search, no dynamic content.
 4. What agents were told is the commit history of this repository. Changing
-   a link or a note is a pull request.
+   a line is a pull request.
 
 ## Layout
 
-- `routes.json`: domain, config path, sources, zones, sections, links.
-- `content/<zone>.md`: the expanded guidance appended to that zone's
+- `routes.json`: domain, config path, the `[repos]` keys, zones, sections,
+  links (`url` on this site, `zone`, or `repo` + `path`).
+- `content/<zone>.md`: the short expansion appended to that zone's
   `llms-full.txt`.
 - `templates/index.html`: the one page template.
 - `build.mjs`: validates `routes.json` and renders `public/`.
-- `test/routes.test.mjs`: shape, validation, and the no-instance-names rule.
-- `tools/pins-check.mjs`: network check that every pinned commit and file
-  resolves.
+- `test/routes.test.mjs`: shape, size, the start text, and the
+  knows-nothing rule.
 - `scripts/dns.mjs`: converges the Cloudflare DNS records and the alias
   redirect rule from `routes.json`.
-- `.github/workflows/ci.yml`: tests, build, and pin check on every PR.
+- `.github/workflows/ci.yml`: tests and build on every PR.
 - `.github/workflows/pages.yml`: builds and deploys `public/` to GitHub Pages
   on every push to `main`.
 
@@ -55,7 +57,6 @@ pinned there and never get a zone.
 
 ```bash
 npm run check        # tests + build (no dependencies; Node 22+)
-npm run pins:check   # every pinned link resolves (network); add --live to also check agentsop.ai itself
 npm run serve        # build and serve public/ on http://localhost:8788
 ```
 
@@ -71,12 +72,4 @@ Redirect edit (the permission that covers redirect rules):
 CLOUDFLARE_API_TOKEN=... node scripts/dns.mjs --dry-run
 ```
 
-then without `--dry-run`. The token is read from the environment only. After
-the apex resolves, GitHub verifies the domain and issues the certificate;
-enforce HTTPS in the repository's Pages settings once it shows as issued.
-
-## Provenance
-
-Extracted from the router prototype built on 2026-09-15 while the split of
-[qwts/agent-sop](https://github.com/qwts/agent-sop) into templates, instances,
-and capabilities was decided in discussions #365, #367, #371, and #372.
+then without `--dry-run`. The token is read from the environment only.
