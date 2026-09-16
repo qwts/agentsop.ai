@@ -93,7 +93,10 @@ async function ensureRedirect(zoneId) {
   try {
     entry = await cf('GET', `/zones/${zoneId}/rulesets/phases/http_request_dynamic_redirect/entrypoint`);
   } catch (error) {
-    if (!/10\d{3}|not.?found|does not exist/i.test(error.message)) throw error;
+    if (/"code":10000/.test(error.message)) {
+      throw new Error(`${error.message}\nThe token cannot read this zone's redirect rules. It needs the permission Zone > Single Redirect > Edit (Cloudflare's name for redirect rules); the DNS records did not need it. Edit the token, add that row, click Update Token, then rerun.`);
+    }
+    if (!/not.?found|does not exist|"code":100(03|05)/i.test(error.message)) throw error;
   }
   const existing = entry?.rules?.find((r) => r.description === RULE_DESCRIPTION);
   if (existing && existing.expression === expression && existing.action_parameters?.from_value?.target_url?.expression === rule.action_parameters.from_value.target_url.expression) {
