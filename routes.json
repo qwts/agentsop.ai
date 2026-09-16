@@ -11,7 +11,7 @@
     },
     "agent-sop": {
       "repo": "qwts/agent-sop",
-      "ref": "ed5c5d8f7aadba6eefa41a7fd17b076601530848",
+      "ref": "bf072f7ab2ed077af781fdc3f754425c43f197c5",
       "role": "template",
       "status": "active",
       "note": "Rules, procedures, and guides: shared SOPs, the ENG decision series, and the SDLC guides. Formerly playbook-engineering, then dev-steward (renamed 2026-09-14, qwts/agent-sop#355)."
@@ -167,6 +167,8 @@
           "heading": "Engineering decisions",
           "links": [
             { "name": "ENG decision index", "src": "agent-sop", "path": "docs/decisions/README.md", "note": "All cross-repository decisions with status. Numbers are issue numbers (ENG-0035)." },
+            { "name": "ENG-0355 Static router, one pointer, pinned capabilities", "src": "agent-sop", "path": "docs/decisions/ENG-0355-static-router-one-pointer-pinned-capabilities.md", "note": "The direction this router implements: zones point at pinned template commits, one local file names the org repository, capabilities load only when named." },
+            { "name": "ENG-0282 Pins are commits, the pin is the record", "src": "agent-sop", "path": "docs/decisions/ENG-0282-immutable-pins-recorded-selection-no-aligner.md", "note": "Why every pointer is a 40-character commit and why moving one is a reviewed change." },
             { "name": "ENG-0006 Agentic primitives governance", "src": "agent-sop", "path": "docs/decisions/ENG-0006-agentic-primitives-governance.md", "note": "One canonical source, progressive disclosure, eval-gated changes." },
             { "name": "ENG-0008 Shared SOP inheritance", "src": "agent-sop", "path": "docs/decisions/ENG-0008-shared-sop-inheritance.md", "note": "Defined once, inherited by default, varied only by explicit delta." },
             { "name": "ENG-0012 Decision priority order", "src": "agent-sop", "path": "docs/decisions/ENG-0012-decision-priority-order.md", "note": "Security, then compliance, then agentic development, then human developers." },
